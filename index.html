@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Procesador de Asistencia Biométrica por C.I.</title>
-  <!-- Tailwind CSS para diseño -->
+  <title>Procesador de Asistencia Biometrica - Formato GNM2</title>
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- SheetJS para lectura/escritura de archivos Excel con múltiples hojas -->
+  <!-- SheetJS para Excel -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans antialiased">
@@ -18,8 +18,8 @@
       <div class="inline-flex items-center justify-center p-3 bg-indigo-600 rounded-xl mb-3 shadow-md">
         <i data-lucide="fingerprint" class="w-8 h-8 text-white"></i>
       </div>
-      <h1 class="text-3xl font-extrabold">Generador de Planillas por C.I.</h1>
-      <p class="text-slate-300 text-sm mt-1">Sube el archivo biométrico (GNM1) y genera un Excel con **una hoja independiente por cada C.I.**</p>
+      <h1 class="text-3xl font-extrabold">Generador de Planillas Formato GNM2</h1>
+      <p class="text-slate-300 text-sm mt-1">Genera un libro Excel con **hojas por C.I.** respetando la estructura exacta de GNM2.</p>
     </div>
   </header>
 
@@ -35,42 +35,43 @@
         <input type="file" id="excelFile" accept=".xlsx, .xls" class="hidden" onchange="procesarBiometrico(event)" />
         <label for="excelFile" class="cursor-pointer flex flex-col items-center gap-2">
           <i data-lucide="file-spreadsheet" class="w-10 h-10 text-slate-400"></i>
-          <span class="text-sm font-semibold text-slate-700">Haz clic aquí para seleccionar el archivo GNM1.xlsx</span>
-          <span class="text-xs text-slate-500">Separación automática por C.I. en hojas individuales</span>
+          <span class="text-sm font-semibold text-slate-700">Haz clic aquí para seleccionar GNM1.xlsx</span>
+          <span class="text-xs text-slate-500">Transformación automática al formato exacto de GNM2</span>
         </label>
       </div>
 
       <div id="statusMessage" class="hidden mt-4 p-3 rounded-lg text-sm"></div>
     </section>
 
-    <!-- Vista Previa de Personas Procesadas -->
+    <!-- Vista Previa por C.I. -->
     <section id="previewSection" class="hidden bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
       <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b pb-3">
         <div>
           <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
-            <i data-lucide="users" class="w-5 h-5 text-emerald-600"></i> Resumen de Personas Encontradas
+            <i data-lucide="users" class="w-5 h-5 text-emerald-600"></i> Vista Previa (Formato GNM2)
           </h2>
           <p id="totalPersonas" class="text-xs text-slate-500"></p>
         </div>
-        <button onclick="descargarPlanillaMultihoja()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-4 py-2 rounded-lg text-sm inline-flex items-center gap-2 transition shadow-sm">
-          <i data-lucide="download" class="w-4 h-4"></i> Descargar Excel Multihoja
+        <button onclick="descargarPlanillaGNM2()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-4 py-2 rounded-lg text-sm inline-flex items-center gap-2 transition shadow-sm">
+          <i data-lucide="download" class="w-4 h-4"></i> Descargar Excel (Formato GNM2)
         </button>
       </div>
 
-      <!-- Selector de C.I. para Vista Previa -->
+      <!-- Selector de C.I. -->
       <div class="flex items-center gap-3">
-        <label for="ciSelector" class="text-sm font-medium text-slate-700">Ver hoja de C.I.:</label>
+        <label for="ciSelector" class="text-sm font-medium text-slate-700">Seleccionar Hoja C.I.:</label>
         <select id="ciSelector" onchange="cambiarVistaCI(this.value)" class="border rounded-lg p-2 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500">
         </select>
       </div>
 
-      <!-- Tabla de Vista Previa -->
+      <!-- Tabla Formato GNM2 -->
       <div class="overflow-x-auto max-h-80 border rounded-lg">
         <table class="w-full text-left text-sm border-collapse">
-          <thead class="bg-slate-100 sticky top-0 border-b">
+          <thead class="bg-slate-100 sticky top-0 border-b text-slate-700">
             <tr>
               <th class="p-3 border-r font-semibold">Cedula No.</th>
-              <th class="p-3 border-r font-semibold">Horario (Marcación)</th>
+              <th class="p-3 border-r font-semibold">Nombre</th>
+              <th class="p-3 border-r font-semibold">Horario</th>
               <th class="p-3 border-r font-semibold">Retrasos</th>
               <th class="p-3 border-r font-semibold">Comision</th>
               <th class="p-3 font-semibold">Observaciones</th>
@@ -86,7 +87,7 @@
 
   <script>
     lucide.createIcons();
-    let agrupadoPorCI = {}; // Estructura: { "5288635": [ registros... ], "7902169": [ ... ] }
+    let agrupadoPorCI = {}; 
 
     function procesarBiometrico(event) {
       const file = event.target.files[0];
@@ -94,7 +95,7 @@
 
       const status = document.getElementById('statusMessage');
       status.className = "mt-4 p-3 rounded-lg text-sm bg-blue-50 text-blue-700 block";
-      status.innerText = "Lectura de archivo y agrupación por C.I. en proceso...";
+      status.innerText = "Procesando marcaciones y generando estructura GNM2...";
 
       const reader = new FileReader();
       reader.onload = function(e) {
@@ -116,6 +117,7 @@
                 agrupadoPorCI[ci] = [];
               }
 
+              // Estructura exacta con las 6 columnas de GNM2
               agrupadoPorCI[ci].push({
                 "Cedula No.": ci,
                 "Nombre": "",
@@ -129,20 +131,20 @@
 
           const listaCIs = Object.keys(agrupadoPorCI);
           if (listaCIs.length === 0) {
-            throw new Error("No se encontraron registros válidos.");
+            throw new Error("No se encontraron registros de marcaciones.");
           }
 
           poblarSelectorCI(listaCIs);
           cambiarVistaCI(listaCIs[0]);
 
-          document.getElementById('totalPersonas').innerText = `Se generarán ${listaCIs.length} hojas individuales en Excel.`;
+          document.getElementById('totalPersonas').innerText = `Se generarán ${listaCIs.length} pestañas con la plantilla GNM2.`;
           status.className = "mt-4 p-3 rounded-lg text-sm bg-emerald-50 text-emerald-700 block";
-          status.innerText = `¡Proceso completado! Se detectaron ${listaCIs.length} C.I. diferentes.`;
+          status.innerText = `¡Proceso exitoso! ${listaCIs.length} C.I. organizados con las columnas exactas de GNM2.`;
           document.getElementById('previewSection').classList.remove('hidden');
 
         } catch (err) {
           status.className = "mt-4 p-3 rounded-lg text-sm bg-red-50 text-red-700 block";
-          status.innerText = "Error al procesar el archivo. Asegúrate de cargar el archivo con el formato de GNM1.xlsx.";
+          status.innerText = "Error en el procesamiento del archivo.";
         }
       };
       reader.readAsArrayBuffer(file);
@@ -154,7 +156,7 @@
       listaCIs.forEach(ci => {
         const option = document.createElement('option');
         option.value = ci;
-        option.textContent = `C.I. ${ci} (${agrupadoPorCI[ci].length} marcaciones)`;
+        option.textContent = `C.I. ${ci} (${agrupadoPorCI[ci].length} registros)`;
         selector.appendChild(option);
       });
     }
@@ -168,6 +170,7 @@
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td class="p-3 border-r font-medium text-slate-900">${row["Cedula No."]}</td>
+          <td class="p-3 border-r">${row["Nombre"]}</td>
           <td class="p-3 border-r">${row["Horario"]}</td>
           <td class="p-3 border-r">${row["Retrasos"]}</td>
           <td class="p-3 border-r">${row["Comision"]}</td>
@@ -177,20 +180,33 @@
       });
     }
 
-    function descargarPlanillaMultihoja() {
+    function descargarPlanillaGNM2() {
       const listaCIs = Object.keys(agrupadoPorCI);
       if (listaCIs.length === 0) return;
 
       const wb = XLSX.utils.book_new();
 
       listaCIs.forEach(ci => {
-        const ws = XLSX.utils.json_to_sheet(agrupadoPorCI[ci]);
-        // Nombre de la pestaña limitado a 31 caracteres (requisito de Excel)
+        // Genera la hoja respetando exactamente los nombres de columna de GNM2
+        const ws = XLSX.utils.json_to_sheet(agrupadoPorCI[ci], {
+          header: ["Cedula No.", "Nombre", "Horario", "Retrasos", "Comision", "Observaciones"]
+        });
+        
+        // Ajuste automático de ancho de columnas
+        ws['!cols'] = [
+          { wch: 15 }, // Cedula No.
+          { wch: 30 }, // Nombre
+          { wch: 22 }, // Horario
+          { wch: 12 }, // Retrasos
+          { wch: 12 }, // Comision
+          { wch: 25 }  // Observaciones
+        ];
+
         const sheetName = ci.substring(0, 31);
         XLSX.utils.book_append_sheet(wb, ws, sheetName);
       });
 
-      XLSX.writeFile(wb, "Planilla_Asistencia_Por_CI.xlsx");
+      XLSX.writeFile(wb, "Planilla_Asistencia_GNM2.xlsx");
     }
   </script>
 </body>
