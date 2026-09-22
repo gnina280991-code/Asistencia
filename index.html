@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Procesador de Asistencia Biométrica</title>
-  <!-- Tailwind CSS -->
+  <title>Procesador de Asistencia Biométrica por C.I.</title>
+  <!-- Tailwind CSS para diseño -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- SheetJS para lectura/escritura de archivos Excel -->
+  <!-- SheetJS para lectura/escritura de archivos Excel con múltiples hojas -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans antialiased">
@@ -18,17 +18,17 @@
       <div class="inline-flex items-center justify-center p-3 bg-indigo-600 rounded-xl mb-3 shadow-md">
         <i data-lucide="fingerprint" class="w-8 h-8 text-white"></i>
       </div>
-      <h1 class="text-3xl font-extrabold">Generador de Planilla de Asistencia</h1>
-      <p class="text-slate-300 text-sm mt-1">Carga el reporte biométrico (GNM1) para volcarlo al formato de planilla (GNM2)</p>
+      <h1 class="text-3xl font-extrabold">Generador de Planillas por C.I.</h1>
+      <p class="text-slate-300 text-sm mt-1">Sube el archivo biométrico (GNM1) y genera un Excel con **una hoja independiente por cada C.I.**</p>
     </div>
   </header>
 
   <main class="max-w-4xl mx-auto px-4 py-8 space-y-8">
 
-    <!-- Tarjeta de Carga e Interacción -->
+    <!-- Carga de Archivo -->
     <section class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
       <h2 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-        <i data-lucide="upload-cloud" class="w-5 h-5 text-indigo-600"></i> Cargar Marcaciones (GNM1)
+        <i data-lucide="upload-cloud" class="w-5 h-5 text-indigo-600"></i> Cargar Marcaciones Biométricas (GNM1)
       </h2>
 
       <div class="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-indigo-500 transition bg-slate-50">
@@ -36,37 +36,47 @@
         <label for="excelFile" class="cursor-pointer flex flex-col items-center gap-2">
           <i data-lucide="file-spreadsheet" class="w-10 h-10 text-slate-400"></i>
           <span class="text-sm font-semibold text-slate-700">Haz clic aquí para seleccionar el archivo GNM1.xlsx</span>
-          <span class="text-xs text-slate-500">Formatos soportados: .xlsx, .xls</span>
+          <span class="text-xs text-slate-500">Separación automática por C.I. en hojas individuales</span>
         </label>
       </div>
 
-      <!-- Estado de Proceso -->
       <div id="statusMessage" class="hidden mt-4 p-3 rounded-lg text-sm"></div>
     </section>
 
-    <!-- Vista Previa de Datos Convertidos -->
+    <!-- Vista Previa de Personas Procesadas -->
     <section id="previewSection" class="hidden bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
-      <div class="flex items-center justify-between border-b pb-3">
-        <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
-          <i data-lucide="table" class="w-5 h-5 text-emerald-600"></i> Vista Previa de Planilla
-        </h2>
-        <button onclick="descargarPlanilla()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-4 py-2 rounded-lg text-sm inline-flex items-center gap-2 transition">
-          <i data-lucide="download" class="w-4 h-4"></i> Descargar Planilla GNM2
+      <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b pb-3">
+        <div>
+          <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+            <i data-lucide="users" class="w-5 h-5 text-emerald-600"></i> Resumen de Personas Encontradas
+          </h2>
+          <p id="totalPersonas" class="text-xs text-slate-500"></p>
+        </div>
+        <button onclick="descargarPlanillaMultihoja()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-4 py-2 rounded-lg text-sm inline-flex items-center gap-2 transition shadow-sm">
+          <i data-lucide="download" class="w-4 h-4"></i> Descargar Excel Multihoja
         </button>
       </div>
 
+      <!-- Selector de C.I. para Vista Previa -->
+      <div class="flex items-center gap-3">
+        <label for="ciSelector" class="text-sm font-medium text-slate-700">Ver hoja de C.I.:</label>
+        <select id="ciSelector" onchange="cambiarVistaCI(this.value)" class="border rounded-lg p-2 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </select>
+      </div>
+
+      <!-- Tabla de Vista Previa -->
       <div class="overflow-x-auto max-h-80 border rounded-lg">
         <table class="w-full text-left text-sm border-collapse">
           <thead class="bg-slate-100 sticky top-0 border-b">
             <tr>
-              <th class="p-3 border-r font-semibold">Cédula No.</th>
+              <th class="p-3 border-r font-semibold">Cedula No.</th>
               <th class="p-3 border-r font-semibold">Horario (Marcación)</th>
               <th class="p-3 border-r font-semibold">Retrasos</th>
+              <th class="p-3 border-r font-semibold">Comision</th>
               <th class="p-3 font-semibold">Observaciones</th>
             </tr>
           </thead>
           <tbody id="tableBody" class="divide-y divide-slate-200">
-            <!-- Rellenado por JS -->
           </tbody>
         </table>
       </div>
@@ -76,7 +86,7 @@
 
   <script>
     lucide.createIcons();
-    let planillaDataGlobal = [];
+    let agrupadoPorCI = {}; // Estructura: { "5288635": [ registros... ], "7902169": [ ... ] }
 
     function procesarBiometrico(event) {
       const file = event.target.files[0];
@@ -84,7 +94,7 @@
 
       const status = document.getElementById('statusMessage');
       status.className = "mt-4 p-3 rounded-lg text-sm bg-blue-50 text-blue-700 block";
-      status.innerText = "Procesando archivo del biométrico...";
+      status.innerText = "Lectura de archivo y agrupación por C.I. en proceso...";
 
       const reader = new FileReader();
       reader.onload = function(e) {
@@ -94,17 +104,21 @@
           const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
           const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
 
-          // Filtrar y convertir registros
-          planillaDataGlobal = [];
+          agrupadoPorCI = {};
+
           for (let i = 0; i < rows.length; i++) {
             const row = rows[i];
             if (row && row[0] && row[1]) {
-              const ci = row[0];
+              const ci = String(row[0]).trim();
               const fechaHora = row[1];
-              
-              planillaDataGlobal.push({
+
+              if (!agrupadoPorCI[ci]) {
+                agrupadoPorCI[ci] = [];
+              }
+
+              agrupadoPorCI[ci].push({
                 "Cedula No.": ci,
-                "Nombre": "", // Se puede mapear según lista de empleados
+                "Nombre": "",
                 "Horario": fechaHora,
                 "Retrasos": "",
                 "Comision": "",
@@ -113,42 +127,71 @@
             }
           }
 
-          renderTabla(planillaDataGlobal);
+          const listaCIs = Object.keys(agrupadoPorCI);
+          if (listaCIs.length === 0) {
+            throw new Error("No se encontraron registros válidos.");
+          }
+
+          poblarSelectorCI(listaCIs);
+          cambiarVistaCI(listaCIs[0]);
+
+          document.getElementById('totalPersonas').innerText = `Se generarán ${listaCIs.length} hojas individuales en Excel.`;
           status.className = "mt-4 p-3 rounded-lg text-sm bg-emerald-50 text-emerald-700 block";
-          status.innerText = `¡Éxito! Se procesaron ${planillaDataGlobal.length} registros del biométrico.`;
+          status.innerText = `¡Proceso completado! Se detectaron ${listaCIs.length} C.I. diferentes.`;
           document.getElementById('previewSection').classList.remove('hidden');
 
         } catch (err) {
           status.className = "mt-4 p-3 rounded-lg text-sm bg-red-50 text-red-700 block";
-          status.innerText = "Error al procesar el archivo. Revisa que sea el formato correcto del biométrico.";
+          status.innerText = "Error al procesar el archivo. Asegúrate de cargar el archivo con el formato de GNM1.xlsx.";
         }
       };
       reader.readAsArrayBuffer(file);
     }
 
-    function renderTabla(datos) {
+    function poblarSelectorCI(listaCIs) {
+      const selector = document.getElementById('ciSelector');
+      selector.innerHTML = "";
+      listaCIs.forEach(ci => {
+        const option = document.createElement('option');
+        option.value = ci;
+        option.textContent = `C.I. ${ci} (${agrupadoPorCI[ci].length} marcaciones)`;
+        selector.appendChild(option);
+      });
+    }
+
+    function cambiarVistaCI(ci) {
       const tbody = document.getElementById('tableBody');
       tbody.innerHTML = "";
-      datos.slice(0, 50).forEach(row => { // Muestra los primeros 50 en la vista previa
+      const datosCI = agrupadoPorCI[ci] || [];
+
+      datosCI.forEach(row => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td class="p-3 border-r">${row["Cedula No."]}</td>
+          <td class="p-3 border-r font-medium text-slate-900">${row["Cedula No."]}</td>
           <td class="p-3 border-r">${row["Horario"]}</td>
           <td class="p-3 border-r">${row["Retrasos"]}</td>
+          <td class="p-3 border-r">${row["Comision"]}</td>
           <td class="p-3">${row["Observaciones"]}</td>
         `;
         tbody.appendChild(tr);
       });
     }
 
-    function descargarPlanilla() {
-      if (!planillaDataGlobal.length) return;
-      const ws = XLSX.utils.json_to_sheet(planillaDataGlobal);
+    function descargarPlanillaMultihoja() {
+      const listaCIs = Object.keys(agrupadoPorCI);
+      if (listaCIs.length === 0) return;
+
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "RENATA");
-      XLSX.writeFile(wb, "Planilla_Asistencia_Consolidada.xlsx");
+
+      listaCIs.forEach(ci => {
+        const ws = XLSX.utils.json_to_sheet(agrupadoPorCI[ci]);
+        // Nombre de la pestaña limitado a 31 caracteres (requisito de Excel)
+        const sheetName = ci.substring(0, 31);
+        XLSX.utils.book_append_sheet(wb, ws, sheetName);
+      });
+
+      XLSX.writeFile(wb, "Planilla_Asistencia_Por_CI.xlsx");
     }
   </script>
 </body>
 </html>
-
